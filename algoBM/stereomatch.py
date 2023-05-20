@@ -1,31 +1,45 @@
 import os
 import sys
+sys.path.append(os.getcwd())
 import time
+import cv2
 from skimage import io
 from skimage.color import rgb2gray
 from blockmatching import *
+from algoBM.utils import compute_census
+
+
 
 def main(Ig, Id, output_file):
     start_time = time.time()
     
-    Ig = io.imread(Ig)
-    Id = io.imread(Id)
-    Ig = rgb2gray(Ig)
-    Id = rgb2gray(Id)
+    Ig = cv2.imread(Ig, cv2.IMREAD_GRAYSCALE)
+    Id = cv2.imread(Id, cv2.IMREAD_GRAYSCALE)
     
     assert Ig.shape == Id.shape, f"Left and right images dimensions must match, got {Ig.shape=} and {Id.shape=}"
     
-    maxdisp = 60
+    MAXDISP = 64
     N = 7
-    disp = block_matching(Ig, Id, N, maxdisp, SAD)
-    disp = mode_filter(disp, N)
+    N_MODE = 11
+    HEIGHT = Ig.shape[0]
+    WIDTH = Ig.shape[1]
+    CSIZE=(3,3)
+    
+    #Preprocessing
+    left_census, right_census = compute_census(Ig, Id, CSIZE, HEIGHT, WIDTH)
+    
+    # Processing
+    disp = block_matching(left_census, right_census, N, MAXDISP, ZNSSD)
+    disp = disp.astype(np.uint8)
+    # Postprocessing
+    disp = mode_filter(disp, N_MODE)
+    disp = np.interp(disp, (0, np.max(disp)), (0, 255)).astype(np.uint8)
     
     end_time = time.time()
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time} seconds")
     
     io.imsave(output_file, disp)
-    
     
 
 if __name__ == '__main__':

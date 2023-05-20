@@ -4,6 +4,7 @@ import matplotlib . pyplot as plt
 from tqdm import tqdm
 from numba import njit
 import time
+from scipy.ndimage import sobel
 
 @njit
 def SAD(block1, block2):
@@ -47,6 +48,22 @@ def NCC(patch1, patch2):
     return ncc_score
 
 
+
+def GC(patch1, patch2):
+    grad_patch1 = np.abs(sobel(patch1, axis=0)) + np.abs(sobel(patch1, axis=1))
+    grad_patch2 = np.abs(sobel(patch2, axis=0)) + np.abs(sobel(patch2, axis=1))
+
+    numerator = np.linalg.norm(grad_patch1 - grad_patch2)
+    denominator = np.linalg.norm(grad_patch1 + grad_patch2)
+
+    gfc_score = numerator / denominator
+
+    return gfc_score
+
+
+
+
+
 @njit
 def block_matching(Iref, Isearch, N, maxdisp, similarity):
     disp = np.zeros_like(Iref)
@@ -54,7 +71,7 @@ def block_matching(Iref, Isearch, N, maxdisp, similarity):
     for i in np.arange(margin,Iref.shape[0] - margin):
         for j in np.arange(margin, Iref.shape[1] - margin):
             ref_block = Iref[i-margin:i+margin+1,j-margin:j+margin+1]
-            min_sad=np.inf
+            min_sad= np.inf
             min_pos=0
             for x_dec in np.arange(0, maxdisp):
                 new_x = j-x_dec
@@ -69,24 +86,26 @@ def block_matching(Iref, Isearch, N, maxdisp, similarity):
 
 
 @njit
-def block_matching_RGB(Iref, Isearch, N, maxdisp, similarity):
+def block_matching_NCC(Iref, Isearch, N, maxdisp, similarity):
     disp = np.zeros_like(Iref)
     margin = N//2
-    for i in np.arange(margin,Iref.shape[0] - margin):
+    for i in tqdm(np.arange(margin,Iref.shape[0] - margin)):
         for j in np.arange(margin, Iref.shape[1] - margin):
-            ref_block = Iref[i-margin:i+margin+1,j-margin:j+margin+1,:]
-            min_sad=np.inf
+            ref_block = Iref[i-margin:i+margin+1,j-margin:j+margin+1]
+            min_sad= -np.Inf
             min_pos=0
             for x_dec in np.arange(0, maxdisp):
                 new_x = j-x_dec
                 if new_x >= margin:
-                    search_block = Isearch[i-margin:i+margin+1, new_x-margin:new_x+margin+1,:]
+                    search_block = Isearch[i-margin:i+margin+1, new_x-margin:new_x+margin+1]
                     sad=similarity(ref_block, search_block)
-                    if sad < min_sad:
+                    if sad > min_sad:
                         min_sad=sad
                         min_pos=x_dec
             disp[i,j]=min_pos
     return disp
+
+
 
 
 @njit
