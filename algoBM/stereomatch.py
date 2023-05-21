@@ -29,11 +29,17 @@ def main(Ig, Id, output_file):
     left_census, right_census = compute_census(Ig, Id, CSIZE, HEIGHT, WIDTH)
     
     # Processing
-    disp = block_matching(left_census, right_census, N, MAXDISP, ZNSSD)
+    disp = block_matching(left_census, right_census, N, MAXDISP, ZSSD)
     disp = disp.astype(np.uint8)
+    
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+    
     # Postprocessing
     disp = mode_filter(disp, N_MODE)
-    disp = np.interp(disp, (0, np.max(disp)), (0, 255)).astype(np.uint8)
+    disp = np.interp(disp, (0, MAXDISP), (0, 255)).astype(np.uint8)
+    disp = np.where(disp <= 56, 0, disp)
     
     end_time = time.time()
     execution_time = end_time - start_time
