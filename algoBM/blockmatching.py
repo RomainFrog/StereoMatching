@@ -8,7 +8,7 @@ from scipy.ndimage import sobel
 
 @njit
 def SAD(block1, block2):
-    return np.abs(block1 - block2).sum()
+    return np.sum(np.abs(block1 - block2))
 
 @njit
 def SSD(block1, block2):
@@ -89,7 +89,7 @@ def block_matching(Iref, Isearch, N, maxdisp, similarity):
 def block_matching_NCC(Iref, Isearch, N, maxdisp, similarity):
     disp = np.zeros_like(Iref)
     margin = N//2
-    for i in tqdm(np.arange(margin,Iref.shape[0] - margin)):
+    for i in np.arange(margin,Iref.shape[0] - margin):
         for j in np.arange(margin, Iref.shape[1] - margin):
             ref_block = Iref[i-margin:i+margin+1,j-margin:j+margin+1]
             min_sad= -np.Inf
