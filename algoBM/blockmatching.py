@@ -107,14 +107,18 @@ def block_matching_NCC(Iref, Isearch, N, maxdisp, similarity):
 
 
 
-
 @njit
 def mode_filter(img, N=5):
+    h, w = img.shape
     filtered_img = np.zeros_like(img)
-    pas = N//2
-    for i in np.arange(pas,img.shape [0]-pas):
-        for j in np.arange(pas, img.shape [1]-pas):
-            block = img[i-pas:i+pas+1,j-pas:j+pas+1]
+
+    margin = N//2
+    # Parcourir chaque pixel de la carte de disparités
+    for i in range(h):
+        for j in range(w):
+            # Extraire la fenêtre 5x5 centrée sur le pixel actuel
+            block = img[max(0, i - margin):min(h, i + margin+1), max(0, j - margin):min(w, j + margin+1)]
+
             occ = {val:0 for val in set(block.flatten())}
             for val in block.flatten():
                 occ[val]+=1
@@ -126,6 +130,7 @@ def mode_filter(img, N=5):
                     max_k=key
                     max_val=value
             filtered_img[i,j]=max_k
+
     return filtered_img
 
 
