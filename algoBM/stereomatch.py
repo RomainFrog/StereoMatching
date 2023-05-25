@@ -23,7 +23,7 @@ def main(Ig, Id, output_file):
     MAXDISP = 64
     N = 7
     N_MODE = 11
-    KSIZE = (3, 3)
+    KSIZE = (3,3)
 
     # Preprocessing
     left_census, right_census = compute_census(Ig, Id, KSIZE)

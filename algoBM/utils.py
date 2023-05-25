@@ -53,3 +53,26 @@ def compute_census(left, right, kernel):
             right_census[y, x] = right_mask
 
     return left_census, right_census
+
+
+def add_mirror_padding(image, padding_size):
+    # Calculate the new dimensions for the padded image
+    height, width = image.shape[:2]
+    new_height = height + 2 * padding_size
+    new_width = width + 2 * padding_size
+    
+    # Create a new blank image with the new dimensions
+    padded_image = np.zeros((new_height, new_width), dtype=np.uint8)
+    
+    # Copy the original image into the center of the padded image
+    padded_image[padding_size:padding_size+height, padding_size:padding_size+width] = image
+    
+    # Mirror padding for the top and bottom borders
+    padded_image[:padding_size, padding_size:padding_size+width] = np.flipud(image[:padding_size])
+    padded_image[padding_size+height:, padding_size:padding_size+width] = np.flipud(image[height-padding_size:])
+    
+    # Mirror padding for the left and right borders
+    padded_image[:, :padding_size] = np.fliplr(padded_image[:, padding_size:2*padding_size])
+    padded_image[:, padding_size+width:] = np.fliplr(padded_image[:, width:width+padding_size])
+    
+    return padded_image

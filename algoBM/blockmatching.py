@@ -134,3 +134,23 @@ def mode_filter(img, N=5):
     return filtered_img
 
 
+@njit
+def block_matching_mirror(Iref, Isearch, N, maxdisp, similarity):
+    disp = np.zeros(shape=(Iref.shape[0] - 2*N, Iref.shape[1] - 2*N))
+    print(disp.shape)
+    margin = N//2
+    for i in np.arange(margin,Iref.shape[0] - margin):
+        for j in np.arange(margin, Iref.shape[1] - margin):
+            ref_block = Iref[i-margin:i+margin+1,j-margin:j+margin+1]
+            min_sad= np.inf
+            min_pos=0
+            for x_dec in np.arange(0, maxdisp):
+                new_x = j-x_dec
+                if new_x >= margin:
+                    search_block = Isearch[i-margin:i+margin+1, new_x-margin:new_x+margin+1]
+                    sad=similarity(ref_block, search_block)
+                    if sad < min_sad:
+                        min_sad=sad
+                        min_pos=x_dec
+            disp[i-N,j-N]=min_pos
+    return disp
