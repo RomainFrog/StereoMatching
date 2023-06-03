@@ -1,17 +1,33 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+File containing auxiliary functions used by stereomatch.py
+Last modification: 06/03/2023 by Romain Froger
+"""
+
 import numpy as np
-import time as t
-import sys
 
 
 def compute_census(left, right, kernel):
     """
-    Calculate census bit strings for each pixel in the left and right images.
-    Arguments:
-        - left: left grayscale image.
-        - right: right grayscale image.
-        - kernel: kernel size for the census transform.
+    Computes census bit strings for each pixel in the left and right images.
 
-    Return: Left and right images with pixel intensities replaced with census bit strings.
+    Parameters
+    -----
+    left: np.ndarray
+        Left grayscale image.
+    right: np.ndarray
+        Right grayscale image.
+    kernel: int
+        Kernel size for the census transform.
+
+    Returns
+    -----
+    left_census: np.ndarray
+        Left image with pixel intensities replaced with census bit strings.
+    right_census: np.ndarray
+        Right image with pixel intensities replaced with census bit strings.
     """
     k_height, k_width = kernel
     y_offset = k_height // 2
@@ -55,24 +71,34 @@ def compute_census(left, right, kernel):
     return left_census, right_census
 
 
-def add_mirror_padding(image, padding_size):
+def add_mirror_padding(image, pad_size):
+    """
+    Given an image and a padding_size returns the image with a mirror padding on its edges
+
+    Parameters
+    -----
+    image: np.ndarray
+        Grayscale image to pad
+    pad_size: int
+        Size of the padding on each edge of the image
+
+    Returns
+    -----
+    pad_img: np.ndarray
+        Mirror-padded-image
+    """
     # Calculate the new dimensions for the padded image
     height, width = image.shape[:2]
-    new_height = height + 2 * padding_size
-    new_width = width + 2 * padding_size
-    
+    new_height = height + 2 * pad_size
+    new_width = width + 2 * pad_size
     # Create a new blank image with the new dimensions
-    padded_image = np.zeros((new_height, new_width), dtype=np.uint8)
-    
+    pad_img = np.zeros((new_height, new_width), dtype=np.uint8)
     # Copy the original image into the center of the padded image
-    padded_image[padding_size:padding_size+height, padding_size:padding_size+width] = image
-    
+    pad_img[pad_size:pad_size+height, pad_size:pad_size+width] = image
     # Mirror padding for the top and bottom borders
-    padded_image[:padding_size, padding_size:padding_size+width] = np.flipud(image[:padding_size])
-    padded_image[padding_size+height:, padding_size:padding_size+width] = np.flipud(image[height-padding_size:])
-    
+    pad_img[:pad_size, pad_size:pad_size+width] = np.flipud(image[:pad_size])
+    pad_img[pad_size+height:, pad_size:pad_size+width] = np.flipud(image[height-pad_size:])
     # Mirror padding for the left and right borders
-    padded_image[:, :padding_size] = np.fliplr(padded_image[:, padding_size:2*padding_size])
-    padded_image[:, padding_size+width:] = np.fliplr(padded_image[:, width:width+padding_size])
-    
-    return padded_image
+    pad_img[:, :pad_size] = np.fliplr(pad_img[:, pad_size:2*pad_size])
+    pad_img[:, pad_size+width:] = np.fliplr(pad_img[:, width:width+pad_size])
+    return pad_img

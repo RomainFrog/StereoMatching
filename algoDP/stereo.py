@@ -4,7 +4,7 @@ from numba import njit
 
 
 @njit
-def stereoMatching(leftImg,rightImg):
+def stereoMatching(leftImg,rightImg, occ):
     rows = leftImg.shape[0]
     cols = leftImg.shape[1]
     
@@ -12,8 +12,6 @@ def stereoMatching(leftImg,rightImg):
     leftDisp=np.zeros((rows,cols))
     rightDisp=np.zeros((rows,cols))
      
-    occ = 20
-    
     # Pick a row in the image to be matched
     for c in range (0,rows):
         # Cost matrix 
@@ -73,3 +71,102 @@ def stereoMatching(leftImg,rightImg):
     right = np.interp(rightDisp, (rightDisp.min(), rightDisp.max()), (0, 255))
                 
     return left, right
+
+
+@njit
+def mode_filter(img, N=5):
+    h, w = img.shape
+    filtered_img = np.zeros_like(img)
+
+    margin = N//2
+    # Parcourir chaque pixel de la carte de disparités
+    for i in range(h):
+        for j in range(w):
+            # Extraire la fenêtre 5x5 centrée sur le pixel actuel
+            block = img[max(0, i - margin):min(h, i + margin+1), max(0, j - margin):min(w, j + margin+1)]
+
+            occ = {val:0 for val in set(block.flatten())}
+            for val in block.flatten():
+                occ[val]+=1
+                
+            max_k=0
+            max_val=0
+            for key, value in occ.items():
+                if value > max_val:
+                    max_k=key
+                    max_val=value
+            filtered_img[i,j]=max_k
+
+    return filtered_img
+
+from tqdm import tqdm
+def stereo_2(original_Left_Image, original_Right_Image, occlusion):
+    
+    leftImage = np.asarray(original_Left_Image, dtype = np.float64)
+    rightImage = np.asarray(original_Right_Image, dtype = np.float64)
+    
+        
+    rowCount, columnCount = leftImage.shape
+    
+    costMatrix = np.empty([columnCount, columnCount], dtype=np.float64)
+    M = np.empty([columnCount, columnCount], dtype=np.float64)
+    disparity_Map_Left = np.empty([rowCount, columnCount], dtype=np.float64)
+    disparity_Map_Right = np.empty([rowCount, columnCount], dtype=np.float64)
+
+    cost = 0.0
+    costMatrix[0, 0] = 0
+    for row in tqdm(range(0, rowCount)):
+    
+        
+        for i in range(1, columnCount):
+            costMatrix[i, 0] = i * occlusion
+            costMatrix[0, i] = i * occlusion
+            
+        for i in range(0, columnCount):
+            for j in range(0, columnCount):
+
+                # Cost function for matching features in the left and right images
+                cost = abs(leftImage[row, i] - rightImage[row, j])
+                
+                min1 = costMatrix[i-1, j-1] + cost
+                min2 = costMatrix[i-1, j] + occlusion
+                min3 = costMatrix[i, j-1] + occlusion
+        
+                cmin = min(min1, min2, min3)
+
+                costMatrix[i, j] = cmin
+                
+                # Forming path matrix
+                if(cmin == min1):
+                    M[i, j] = 1
+                if(cmin == min2):
+                    M[i, j] = 2
+                if(cmin == min3):
+                    M[i, j] = 3
+
+        p = columnCount - 1
+        q = columnCount - 1
+        
+        while(p != 0 and q !=0):
+            
+            # if feature in left and right image matches
+            if(M[p, q] == 1):
+                disparity_Map_Left[row, p] = abs(p-q)
+                disparity_Map_Right[row, q] = abs(q-p)                
+                p = p - 1
+                q = q - 1
+                
+            # if feature in left image is occuluded
+            elif(M[p, q] == 2):
+                disparity_Map_Left[row, p] = 0
+                p = p - 1
+        
+            # if feature in right image is occuluded
+            elif(M[p, q] == 3):
+                disparity_Map_Right[row, q] = 0
+                q = q - 1
+                
+        costMatrix = np.empty([columnCount, columnCount], dtype=np.float64)
+        M = np.empty([columnCount, columnCount], dtype=np.float64)
+        
+    return disparity_Map_Left, disparity_Map_Right
