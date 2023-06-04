@@ -5,27 +5,27 @@
 Launch disparity computation from left to right image
 Last modification: 06/03/2023 by Romain Froger
 """
-import os
+
 import sys
 import cv2
+import numpy as np
 from skimage import io
-from blockmatching import *
-sys.path.append(os.getcwd())
-from algoBM.utils import compute_census
+from blockmatching import block_matching, ZSSD, mode_filter
+from utils import compute_census
 
 
-def main(Ig, Id, output_file):
+def main(left_image, right_image, output_file):
     """
-    Compute disparity from Ig --> Id with:
+    Compute disparity from left_image --> right_image with:
     - preprocessing (census)
     - processing (blockmatching)
     - postprocessnig (mode filter)
 
     Parameters
     ------
-    Ig: np.ndarray
+    left_image: np.ndarray
         Left grayscale image
-    Id: np.ndarray
+    right_image: np.ndarray
         Right grayscale image
     output_file: string
         Name of the output file
@@ -37,15 +37,15 @@ def main(Ig, Id, output_file):
     KSIZE = (3,3)
     OCCL_THRESH = 56
 
-    Ig = cv2.imread(Ig, cv2.IMREAD_GRAYSCALE)
-    Id = cv2.imread(Id, cv2.IMREAD_GRAYSCALE)
+    left_image = cv2.imread(left_image, cv2.IMREAD_GRAYSCALE)
+    right_image = cv2.imread(right_image, cv2.IMREAD_GRAYSCALE)
 
     assert (
-        Ig.shape == Id.shape
-    ), f"Left and right images dimensions must match, got {Ig.shape=} and {Id.shape=}"
+        left_image.shape == right_image.shape
+    ), f"Left and right images dimensions mismatch: {left_image.shape=} vs {right_image.shape=}"
 
     # Preprocessing
-    left_census, right_census = compute_census(Ig, Id, KSIZE)
+    left_census, right_census = compute_census(left_image, right_image, KSIZE)
 
     # Processing
     disp = block_matching(left_census, right_census, N, MAXDISP, ZSSD)
