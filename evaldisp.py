@@ -9,6 +9,7 @@ import sys
 import numpy as np
 #import matplotlib.pyplot as plt
 from skimage import io
+from skimage.color import rgb2gray
 
 def evaldisp(GT, occl, disp):
     # mise à l'échelle pixellique normale des disparités et de la vérité
@@ -62,9 +63,9 @@ def evaldisp(GT, occl, disp):
 
 def main(fgt, foccl, fdisp):
     GT = io.imread(fgt)
-    occl = io.imread(foccl) # occultations point de vue image gauche
+    occl = rgb2gray(io.imread(foccl)) # occultations point de vue image gauche
     disp = io.imread(fdisp)
-
+    print(GT.shape, occl.shape, disp.shape)
     assert GT.shape == occl.shape == disp.shape, "Les images de cartes de disparités et d'occultations d'entrée n'ont pas les mêmes dimensions !"
 
 
