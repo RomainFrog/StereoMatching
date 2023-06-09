@@ -62,11 +62,9 @@ def evaldisp(GT, occl, disp):
 
 def main(fgt, foccl, fdisp):
     GT = io.imread(fgt)
-    occl = io.imread(foccl) # occultations point de vue image gauche
+    occl = io.imread(foccl, as_gray=True) # occultations point de vue image gauche # as_gray car cette image utilise une palette de couleur et peut se trouver considérée comme une image couleur en fonction des versions des bibliothèques utilisées
     disp = io.imread(fdisp)
-    print(disp.shape)
-    
-    # disp = disp[:,:,2]
+
     assert GT.shape == occl.shape == disp.shape, "Les images de cartes de disparités et d'occultations d'entrée n'ont pas les mêmes dimensions !"
 
 
