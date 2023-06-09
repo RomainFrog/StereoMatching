@@ -8,8 +8,8 @@ Created on Fri Jun  9 11:14:24 2023
 
 import sys
 import cv2
-from skimage import io
-from semiglobalmatching import compute_costs, aggregate_costs, select_disparity, mode_filter, normalize
+import numpy as np
+from semiglobalmatching import compute_costs, aggregate_costs, mode_filter
 from utils import compute_census
 
 def main(left_image, right_image, output_file):
@@ -45,13 +45,14 @@ def main(left_image, right_image, output_file):
         left_census, right_census = compute_census(left_image, right_image, csize)
 
         # Processing
-        left_cost_volume = compute_costs(left_census, right_census, csize, maxdisp)
+        left_cost_volume = compute_costs(left_census, right_census, csize[0], maxdisp)
         left_aggregation_volume = aggregate_costs(left_cost_volume, P1, P2)
-        left_disparity_map = select_disparity(left_aggregation_volume)
+        summed_volume = np.sum(left_aggregation_volume, axis=3)
+        left_disparity_map = np.argmin(summed_volume, axis=2)
 
         # Postprocessing
         left_disparity_map = mode_filter(left_disparity_map, msize)
-        left_disparity_map = normalize(left_disparity_map, maxdisp)
+        left_disparity_map = 255.0 * left_disparity_map / maxdisp
 
         # Save to output_file
         cv2.imwrite(output_file, left_disparity_map)
