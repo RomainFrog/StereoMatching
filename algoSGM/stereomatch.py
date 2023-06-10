@@ -53,6 +53,7 @@ def main(left_image, right_image, output_file):
         # Postprocessing
         left_disparity_map = mode_filter(left_disparity_map, msize)
         left_disparity_map = 255.0 * left_disparity_map / maxdisp
+        left_disparity_map = np.where(left_disparity_map <= 70, 0, left_disparity_map)
 
         # Save to output_file
         cv2.imwrite(output_file, left_disparity_map)
